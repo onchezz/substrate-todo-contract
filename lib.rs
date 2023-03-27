@@ -7,6 +7,8 @@ mod todo {
     use ink::prelude::string::String;
     use ink::prelude::vec::Vec;
 
+    use ink::prelude::*;
+
     // src="https://api-sa.substrate.io/latest.js"
     #[derive(scale::Decode, scale::Encode, Clone, Debug)]
     #[cfg_attr(
@@ -33,19 +35,16 @@ mod todo {
     // use ink::primitives::AccountId;
 
     #[ink(storage)]
-    // #[derive(scale::Decode, scale::Encode, Clone, Debug)]
-
     pub struct Todos {
-        // user: AccountId,
+        user: AccountId,
         todos: Vec<Note>,
-        // todos: VecDeque<Note>,
     }
 
     impl Todos {
         #[ink(constructor)]
         pub fn default() -> Self {
             Self {
-                // user: Self::env().account_id(),
+                user: Self::env().account_id(),
                 todos: Default::default(),
             }
         }
@@ -53,7 +52,7 @@ mod todo {
         #[ink(constructor)]
         pub fn new() -> Self {
             Self {
-                // user: Self::env().account_id(),
+                user: Self::env().account_id(),
                 todos: Vec::new(),
             }
         }
@@ -83,15 +82,17 @@ mod todo {
         #[ink(message)]
         pub fn delete_note(&mut self, id: u64) -> Result<String, String> {
             let notes = &mut self.todos;
-            notes.remove(id as usize);
+            let index = id - 1;
+            notes.remove(index as usize);
             let msg = format!("Note successfully deleted at index {}", id);
             Ok(String::from(msg))
         }
         #[ink(message)]
         pub fn edit_note(&mut self, id: u64, todo: String) -> Result<String, String> {
             let notes = &mut self.todos;
+            let index = id - 1;
             for i in notes.iter_mut() {
-                if i.id == id {
+                if i.id == index {
                     i.todo = todo.clone();
                 }
             }
@@ -103,11 +104,15 @@ mod todo {
     mod tests {
         /// Imports all the definitions from the outer scope so we can use them here.
         use super::*;
+        // use ink::env::{call::utils::ArgumentList, test};
+
+        const WALLET: [u8; 32] = [7; 32];
 
         #[ink::test]
         fn new_note() {
+            let user = AccountId::from(WALLET);
             let mut todo = Todos {
-                // user: Self::env().account_id(),
+                user: user,
                 todos: Vec::new(),
             };
             let note = String::from(" hello test information");
@@ -118,7 +123,11 @@ mod todo {
 
         #[ink::test]
         fn delete_note() {
-            let mut todo = Todos { todos: Vec::new() };
+            let user = AccountId::from(WALLET);
+            let mut todo = Todos {
+                user: user,
+                todos: Vec::new(),
+            };
             let note = String::from(" hello test information");
             todo.new_note(note).unwrap();
             let note2 = String::from(" hello test 2");
@@ -130,7 +139,11 @@ mod todo {
 
         #[ink::test]
         fn get_notes() {
-            let mut todo = Todos { todos: Vec::new() };
+            let user = AccountId::from(WALLET);
+            let mut todo = Todos {
+                user: user,
+                todos: Vec::new(),
+            };
             let note = String::from(" hello test information");
             todo.new_note(note).unwrap();
             let note2 = String::from(" hello test 2");
@@ -142,7 +155,11 @@ mod todo {
         }
         #[ink::test]
         fn edit_note() {
-            let mut todo = Todos { todos: Vec::new() };
+            let user = AccountId::from(WALLET);
+            let mut todo = Todos {
+                user: user,
+                todos: Vec::new(),
+            };
             let note = String::from(" hello test information");
             todo.new_note(note).unwrap();
             let note2 = String::from(" hello test 2");
